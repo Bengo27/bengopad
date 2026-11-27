@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 5
+LAYOUT_VERSION = 6
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -11,7 +11,7 @@ DEFAULTS = {
     "host": "",
     "user": "",
     "toggle_key": "F8",        # capture on/off (always works)
-    "auto_vehicle_key": "E",   # enter/exit vehicle key also switches the layout
+    "auto_vehicle_key": "F",   # enter/exit vehicle key also switches the layout
     "vehicle_key": "B",        # manual fix if the layout got out of sync
     "walk_key": "",
     # Minigame (hotwiring, safes...): while holding this key the mouse PLACES
@@ -32,8 +32,8 @@ DEFAULTS = {
         "MOUSE_RIGHT": "L2",       # aim / interact
         "LSHIFT": "L3",            # run (press again = sprint)
         "SPACE": "CROSS",          # jump / climb
-        "E": "TRIANGLE",           # interact / enter vehicle
-        "F": "SQUARE",             # melee
+        "E": "TRIANGLE",           # interact (doors, shops, people...)
+        "F": "TRIANGLE",           # enter / exit vehicle (also switches layout)
         "LCTRL": "CIRCLE",         # crouch
         "Q": "R1",                 # cover
         "TAB": "L1",               # holster (hold = loadout)
@@ -45,7 +45,7 @@ DEFAULTS = {
         "DOWN": "DOWN",            # objective / minimap
         "RIGHT": "RIGHT",          # detonate explosives
         "V": "SHARE",              # (create button)
-        "R": "SQUARE",             # reload
+        "R": "SQUARE",             # reload / melee
         "MOUSE_MIDDLE": "R1",      # hold = quick throw (grenade)
         "WHEEL_UP": "UP",          # zoom in while aiming
         "WHEEL_DOWN": "DOWN",      # zoom out while aiming

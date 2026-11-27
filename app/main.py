@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.4.0"
+VERSION = "0.4.1"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -196,8 +196,9 @@ class App:
         ttk.Button(r, text="Reload", command=self.reload_cfg).pack(side="left")
         tk.Label(self.root, justify="left", font=("Segoe UI", 9), fg="#555", text=(
             "GTA 6 Default layout (RDR2 style):\n"
-            "LMB shoot, RMB aim, Shift run, Space jump, E interact/vehicle,\n"
-            "F melee, R reload, Ctrl crouch, Q cover, Tab holster, C look back,\n"
+            "LMB shoot, RMB aim, Shift run, Space jump, E interact,\n"
+            "F enter/exit vehicle,\n"
+            "R reload/melee, Ctrl crouch, Q cover, Tab holster, C look back,\n"
             "M map, middle mouse = hold to throw, wheel = scope zoom,\n"
             "Arrows = D-pad (Up phone).  In a car: W gas, S brake,\n"
             "Space handbrake, LMB shoot, Shift horn, H lights, Q/X indicators.")).pack(**pad)
