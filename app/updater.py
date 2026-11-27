@@ -70,4 +70,12 @@ def download_and_restart(url: str, progress=None):
             f'start "" "{exe}"\r\n'
             'del "%~f0"\r\n'
         )
-    subprocess.Popen(["cmd", "/c", bat], creationflags=0x08000000)  # CREATE_NO_WINDOW
+    # The new exe must start as a fresh PyInstaller app, not as a "child" of
+    # this one (whose temp folder is deleted when we quit).
+    env = {k: v for k, v in os.environ.items()
+           if not k.upper().startswith(("_MEI", "_PYI", "_PYINSTALLER"))}
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    for key in ("TCL_LIBRARY", "TK_LIBRARY"):
+        env.pop(key, None)
+    subprocess.Popen(["cmd", "/c", bat], creationflags=0x08000000,  # CREATE_NO_WINDOW
+                     env=env, close_fds=True)
