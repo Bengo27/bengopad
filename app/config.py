@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 7
+LAYOUT_VERSION = 8
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -56,19 +56,16 @@ DEFAULTS = {
         "WHEEL_DOWN": "DOWN",      # zoom out while aiming
         "G": "", "X": "", "Z": "", "CAPSLOCK": "", "LALT": "",
     },
-    # Only the keys listed here change in vehicle mode; the rest come from on_foot
+    # Only the keys listed here change in vehicle mode; everything else stays
+    # exactly like on foot, so prompts (slim jim / smash window) and hotwiring
+    # work no matter which mode you are in.
     "vehicle": {
         "W": "R2",                 # gas
         "S": "L2",                 # brake / reverse
-        "A": "LS_LEFT", "D": "LS_RIGHT",
-        "SPACE": "CROSS",          # handbrake
         "MOUSE_LEFT": "R1",        # shoot
-        "MOUSE_RIGHT": "",
-        "LSHIFT": "L3",            # horn / nitrous
+        "Q": "LEFT",               # indicate left (hold = vehicle menu)
+        "X": "RIGHT",              # indicate right (hold = partner menu)
         "H": "CIRCLE",             # headlights
-        "LCTRL": "",
-        "Q": "LEFT",               # indicate left
-        "X": "RIGHT",              # indicate right
         "WHEEL_UP": "", "WHEEL_DOWN": "",  # no phone/minimap while driving
     },
 }
@@ -82,8 +79,6 @@ def style_layout(style: str) -> tuple:
     veh = copy.deepcopy(DEFAULTS["vehicle"])
     if style == "gta5":
         foot["Z"] = "DOWN"          # radar zoom -> minimap
-        veh["E"] = "L3"             # horn (GTA 5 PC)
-        veh["LSHIFT"] = "L3"        # nitrous
     return foot, veh
 
 
@@ -117,8 +112,9 @@ def load() -> dict:
                 user = json.load(f)
             if user.get("layout_version") != LAYOUT_VERSION:
                 # new default layout: keep connection + mouse settings only
-                user = {k: user[k] for k in ("host", "user", "mouse") if k in user}
+                user = {k: user[k] for k in ("host", "user", "mouse", "style") if k in user}
                 cfg = _merge(DEFAULTS, user)
+                cfg["on_foot"], cfg["vehicle"] = style_layout(cfg.get("style", "rdr2"))
                 save(cfg)
                 return cfg
             return _merge(DEFAULTS, user)

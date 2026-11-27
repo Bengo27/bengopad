@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.5.2"
+VERSION = "0.5.3"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -216,8 +216,8 @@ class App:
             "R reload/melee, Ctrl crouch, Q cover, Tab holster, C look back,\n"
             "M map, middle mouse = hold to throw, wheel = scope zoom,\n"
             "Arrows = D-pad (Up phone).  In a car: W gas, S brake,\n"
-            "Space handbrake, LMB shoot, Shift horn (GTA5 style: also E),\n"
-            "H lights, Q/X indicators.  GTA5 style: Z = minimap.")).pack(**pad)
+            "LMB shoot, Q/X indicators, H lights. Everything else stays the same\n"
+            "in a car.  GTA5 style: Z = minimap.")).pack(**pad)
 
     def _slide(self, key, var, label):
         self.cfg["mouse"][key] = round(var.get(), 3)
