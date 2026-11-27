@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -170,6 +170,7 @@ class App:
         mbox = ttk.LabelFrame(self.root, text="Mouse -> right stick")
         mbox.pack(fill="x", **pad)
         self.sliders = {}
+        self._slider_lbls = {}
         for key, label, lo, hi in [("sensitivity", "Sensitivity", 0.2, 5.0),
                                    ("curve", "Curve (low = snappy)", 0.4, 2.0),
                                    ("anti_deadzone", "Anti-deadzone", 0.0, 0.4),
@@ -184,9 +185,14 @@ class App:
             s.pack(side="left", fill="x", expand=True)
             val.pack(side="left")
             self.sliders[key] = var
+            self._slider_lbls[key] = val
         self.inv_var = tk.BooleanVar(value=bool(self.cfg["mouse"].get("invert_y")))
-        ttk.Checkbutton(mbox, text="Invert Y", variable=self.inv_var,
-                        command=self._invert).pack(anchor="w", padx=4)
+        prow = ttk.Frame(mbox)
+        prow.pack(fill="x", pady=2)
+        ttk.Checkbutton(prow, text="Invert Y", variable=self.inv_var,
+                        command=self._invert).pack(side="left", padx=4)
+        ttk.Button(prow, text="Default", command=lambda: self._preset("default")).pack(side="right", padx=4)
+        ttk.Button(prow, text="PC feel", command=lambda: self._preset("pc")).pack(side="right")
 
         kbox = ttk.LabelFrame(self.root, text="Key mapping")
         kbox.pack(fill="x", **pad)
@@ -207,6 +213,32 @@ class App:
         self.cfg["mouse"][key] = round(var.get(), 3)
         label.config(text=f"{var.get():.2f}")
         self._save_later()
+
+    PRESETS = {
+        # linear, little smoothing, small anti-deadzone. Pair with in-game:
+        # Look/Aim Acceleration lowest, Aim Response Curve Linear,
+        # right-stick Deadzone lowest, Look/Aim Sensitivity 12-14.
+        "pc": {"curve": 1.0, "smoothing": 0.2, "anti_deadzone": 0.08},
+        "default": {"sensitivity": 1.0, "curve": 0.85, "smoothing": 0.45, "anti_deadzone": 0.18},
+    }
+
+    def _preset(self, name):
+        for key, val in self.PRESETS[name].items():
+            self.cfg["mouse"][key] = val
+            self.sliders[key].set(val)
+            lbl = self._slider_lbls.get(key)
+            if lbl:
+                lbl.config(text=f"{val:.2f}")
+        config.save(self.cfg)
+        if name == "pc":
+            messagebox.showinfo(APP, (
+                "PC feel is on.\n\nFor best results, in GTA 6 go to Settings > Controller:\n"
+                "- Look / Aim Acceleration: lowest\n"
+                "- Aim Response Curve: Linear\n"
+                "- Deadzone (Right Stick): lowest\n"
+                "- Look / Aim Sensitivity: 12-14\n\n"
+                "Then adjust Sensitivity here until it feels right.\n"
+                "If the camera drifts by itself, raise Anti-deadzone a little."))
 
     def _invert(self):
         self.cfg["mouse"]["invert_y"] = self.inv_var.get()
