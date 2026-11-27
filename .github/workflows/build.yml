@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -27,3 +30,16 @@ jobs:
         with:
           name: BengoPad
           path: dist/BengoPad.exe
+      - name: Publish release (used by the in-app updater)
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VER=$(python -c "import re;print(re.search(r'VERSION = \"([^\"]+)\"', open('app/main.py',encoding='utf-8').read()).group(1))")
+          echo "Version $VER"
+          if gh release view "v$VER" >/dev/null 2>&1; then
+            gh release upload "v$VER" dist/BengoPad.exe --clobber
+          else
+            gh release create "v$VER" dist/BengoPad.exe --title "Bengo Pad $VER" --notes "Bengo Pad $VER" --latest
+          fi

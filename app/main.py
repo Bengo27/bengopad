@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.5.5"
+VERSION = "0.6.0"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -31,6 +31,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
 import rp  # noqa: E402  (after logging setup)
+import updater  # noqa: E402
 from hooks import InputHooks  # noqa: E402
 
 
@@ -64,6 +65,32 @@ class App:
         self.hooks.start()
         self.root.after(50, self._poll)
         self._refresh_account()
+        self._bg(lambda: updater.check(VERSION), self._update_found, quiet=True)
+
+    # ---------- updates ----------
+    def _update_found(self, result):
+        if not result:
+            return
+        ver, url = result
+        self._update = (ver, url)
+        self.update_btn.config(text=f"Update to {ver}")
+        self.update_btn.pack(fill="x", padx=10, pady=(4, 0), after=self.capture_lbl)
+
+    def do_update(self):
+        ver, url = self._update
+        if not updater.can_self_update():
+            webbrowser.open(f"https://github.com/{updater.REPO}/releases/latest")
+            return
+        if not messagebox.askyesno(APP, f"Download version {ver} and restart Bengo Pad?"):
+            return
+        self.update_btn.config(text="Downloading...", state="disabled")
+
+        def prog(frac):
+            self.ui_q.put(("call", lambda: self.update_btn.config(text=f"Downloading... {int(frac * 100)}%")))
+
+        def done(_):
+            self.quit()
+        self._bg(lambda: updater.download_and_restart(url, prog), done, "Update failed")
 
     # ---------- system tray ----------
     def _start_tray(self):
@@ -138,6 +165,9 @@ class App:
         self.capture_lbl = tk.Label(self.root, text="CAPTURE OFF", font=big,
                                     fg="white", bg="#444", pady=8)
         self.capture_lbl.pack(fill="x")
+        self.update_btn = tk.Button(self.root, text="Update", bg="#1f6feb", fg="white",
+                                    font=("Segoe UI", 10, "bold"), relief="flat",
+                                    command=self.do_update)
         tk.Label(self.root, text=f"{self.cfg['toggle_key']} = capture on/off     "
                  f"{self.cfg.get('auto_vehicle_key')} = enter/exit car (switches layout, "
                  f"{self.cfg['vehicle_key']} = fix)\n"
@@ -323,7 +353,7 @@ class App:
         self.ui_q.put(("capture", None))
 
     # ---------- actions ----------
-    def _bg(self, work, done=None, fail_title="Error"):
+    def _bg(self, work, done=None, fail_title="Error", quiet=False):
         def run():
             try:
                 res = work()
@@ -331,6 +361,8 @@ class App:
                     self.ui_q.put(("call", lambda: done(res)))
             except Exception as exc:  # pylint: disable=broad-except
                 logging.exception("action")
+                if quiet:
+                    return
                 msg = str(exc)
                 self.ui_q.put(("call", lambda: messagebox.showerror(fail_title, msg)))
         threading.Thread(target=run, daemon=True).start()
