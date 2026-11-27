@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.5.4"
+VERSION = "0.5.5"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -142,7 +142,8 @@ class App:
                  f"{self.cfg.get('auto_vehicle_key')} = enter/exit car (switches layout, "
                  f"{self.cfg['vehicle_key']} = fix)\n"
                  "Hotwire: in a car hold RMB. Move the mouse along R's arc to turn R,\n"
-                 f"S/D move L down its arc, W/A move it up.  On foot: hold {self.cfg.get('minigame_key')}\n"
+                 f"S/D move L down its arc, W/A move it up, hold LMB = mouse moves L+R together.\n"
+                 f"On foot: hold {self.cfg.get('minigame_key')} instead of RMB.\n"
                  "Capture ON hides this window to the tray (click the tray icon to open)",
                  font=("Segoe UI", 9)).pack(**pad)
 

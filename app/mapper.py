@@ -71,6 +71,12 @@ class Mapper:
                 and self.cfg.get("vehicle_rmb_minigame", True))
 
     def input_down(self, name: str):
+        if self.minigame and name == "MOUSE_LEFT":
+            # hotwire: hold LMB = the mouse moves L and R together (mirrored)
+            with self._lock:
+                self._held[name] = ""
+                self._ang_r = (180.0 - self._ang_l) % 360
+            return
         if self._rmb_minigame(name):
             self.set_minigame(True)
             with self._lock:
@@ -108,7 +114,17 @@ class Mapper:
                 # circle (tangent) turns the stick, so you can follow an arc
                 # in any direction (e.g. down the left side for R).
                 step = float(self.cfg.get("minigame_deg_per_count", 0.25))
-                left = self.cfg.get("minigame_left_key") in self._held
+                both = self._held.get("MOUSE_LEFT") == ""
+                left = both or self.cfg.get("minigame_left_key") in self._held
+                if both:
+                    # slide along the arcs: mouse down = both sticks go down
+                    a = self._ang_l
+                    if a > 180:
+                        a -= 360
+                    a = max(-90.0, min(90.0, a + dy * step))
+                    self._ang_l = a % 360
+                    self._ang_r = (180.0 - a) % 360
+                    return
                 ang = self._ang_l if left else self._ang_r
                 rad = math.radians(ang)
                 tang = -dx * math.sin(rad) + dy * math.cos(rad)
@@ -117,6 +133,8 @@ class Mapper:
                 ang = (ang + tang * step) % 360
                 if left:
                     self._ang_l = ang
+                    if both:  # R mirrors L (L's arc is on the right, R's on the left)
+                        self._ang_r = (180.0 - ang) % 360
                 else:
                     self._ang_r = ang
                 return
