@@ -3,10 +3,9 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 2
+LAYOUT_VERSION = 3
 
-# Based on GTA 5 PC keys -> PlayStation buttons
-# (in GTA 6 pick the "Classic" control scheme, which works like GTA 5)
+# GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
     "layout_version": LAYOUT_VERSION,
     "host": "",
@@ -24,37 +23,38 @@ DEFAULTS = {
     "on_foot": {
         "W": "LS_UP", "S": "LS_DOWN", "A": "LS_LEFT", "D": "LS_RIGHT",
         "MOUSE_LEFT": "R2",        # shoot
-        "MOUSE_RIGHT": "L2",       # aim
-        "LSHIFT": "CROSS",         # sprint
-        "SPACE": "SQUARE",         # jump
-        "F": "TRIANGLE",           # enter vehicle
-        "R": "CIRCLE",             # reload / melee
+        "MOUSE_RIGHT": "L2",       # aim / interact
+        "LSHIFT": "L3",            # run (press again = sprint)
+        "SPACE": "CROSS",          # jump / climb
+        "E": "TRIANGLE",           # interact / enter vehicle
+        "F": "SQUARE",             # melee
+        "LCTRL": "CIRCLE",         # crouch
         "Q": "R1",                 # cover
-        "TAB": "L1",               # weapon wheel
-        "LCTRL": "L3",             # stealth / crouch
-        "C": "R3",                 # look behind
-        "CAPSLOCK": "L3+R3",       # special ability
-        "V": "SHARE",              # change camera
+        "TAB": "L1",               # holster (hold = loadout)
+        "C": "R3",                 # look behind (zoom while aiming)
         "M": "TOUCHPAD",           # map
         "ESC": "OPTIONS", "P": "OPTIONS",  # pause
-        "UP": "UP", "DOWN": "DOWN", "LEFT": "LEFT", "RIGHT": "RIGHT",
-        "LALT": "DOWN",            # character wheel / minimap (hold)
-        "WHEEL_UP": "LEFT",        # previous weapon
-        "WHEEL_DOWN": "RIGHT",     # next weapon
-        "E": "", "G": "", "X": "", "Z": "", "MOUSE_MIDDLE": "",
+        "UP": "UP",                # phone
+        "LEFT": "LEFT",            # radio
+        "DOWN": "DOWN",            # objective / minimap
+        "RIGHT": "RIGHT",          # detonate explosives
+        "V": "SHARE",              # (create button)
+        "R": "", "G": "", "X": "", "Z": "", "CAPSLOCK": "", "LALT": "",
+        "MOUSE_MIDDLE": "", "WHEEL_UP": "", "WHEEL_DOWN": "",
     },
     # Only the keys listed here change in vehicle mode; the rest come from on_foot
     "vehicle": {
         "W": "R2",                 # gas
         "S": "L2",                 # brake / reverse
         "A": "LS_LEFT", "D": "LS_RIGHT",
-        "SPACE": "R1",             # handbrake
-        "E": "L3",                 # horn
-        "H": "RIGHT",              # headlights
-        "Q": "LEFT",               # radio
-        "MOUSE_RIGHT": "L1",       # drive-by aim
-        "MOUSE_LEFT": "R1",        # drive-by shoot (with aim held)
-        "LSHIFT": "", "WHEEL_UP": "", "WHEEL_DOWN": "",
+        "SPACE": "CROSS",          # handbrake
+        "MOUSE_LEFT": "R1",        # shoot
+        "MOUSE_RIGHT": "",
+        "LSHIFT": "L3",            # horn / nitrous
+        "H": "CIRCLE",             # headlights
+        "LCTRL": "",
+        "Q": "LEFT",               # indicate left
+        "X": "RIGHT",              # indicate right
     },
 }
 
