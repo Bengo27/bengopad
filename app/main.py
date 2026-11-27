@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.1.1"
+VERSION = "0.1.2"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -178,7 +178,8 @@ class App:
                 if kind == "status":
                     ok = val == "CONNECTED"
                     self.status_lbl.config(text=val, foreground="#080" if ok else "#a00")
-                    if not self.link.connected and self.hooks.capturing:
+                    if not self.link.connected and not self.link.reconnecting \
+                            and self.hooks.capturing:
                         self._set_capture(False)
                 elif kind == "capture":
                     self._paint_capture()
@@ -197,7 +198,7 @@ class App:
 
     # ---------- hotkeys (called from hook thread) ----------
     def toggle_capture(self):
-        if not self.hooks.capturing and not self.link.connected:
+        if not self.hooks.capturing and not (self.link.connected or self.link.reconnecting):
             beep(False)
             self.ui_q.put(("status", "Connect to the PS5 first"))
             return
