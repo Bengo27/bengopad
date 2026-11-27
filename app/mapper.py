@@ -60,9 +60,6 @@ class Mapper:
 
     # ---------- input from hooks ----------
     def input_down(self, name: str):
-        if self.minigame and name == self.cfg.get("minigame_center_key"):
-            self.center_sticks()
-            return
         with self._lock:
             if name in self._held:
                 return  # key auto-repeat

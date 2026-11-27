@@ -130,13 +130,15 @@ class InputHooks:
                 self.on_vehicle()
             return 1
         if vk == VK.get(self.cfg.get("minigame_key", "")):
-            if down and not repeat and self.on_minigame:
-                self.on_minigame()
+            if not repeat and self.on_minigame:
+                self.on_minigame(down)   # held = minigame, released = normal
             return 1
         name = VK_NAME.get(vk)
         if name:
             if down:
                 self.mapper.input_down(name)
+                if not repeat and name == self.cfg.get("auto_vehicle_key"):
+                    self.on_vehicle()
             else:
                 self.mapper.input_up(name)
         return 1

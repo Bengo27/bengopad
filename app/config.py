@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 4
+LAYOUT_VERSION = 5
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -11,12 +11,13 @@ DEFAULTS = {
     "host": "",
     "user": "",
     "toggle_key": "F8",        # capture on/off (always works)
-    "vehicle_key": "F9",       # switch on-foot / vehicle layout
+    "auto_vehicle_key": "E",   # enter/exit vehicle key also switches the layout
+    "vehicle_key": "B",        # manual fix if the layout got out of sync
     "walk_key": "",
-    # Minigame mode (hotwiring, safes...): the mouse PLACES the stick and it stays there
-    "minigame_key": "F10",           # toggle minigame mode
-    "minigame_left_key": "LALT",     # hold = mouse moves the LEFT stick instead
-    "minigame_center_key": "CAPSLOCK",  # put both sticks back in the middle
+    # Minigame (hotwiring, safes...): while holding this key the mouse PLACES
+    # the right stick and it stays there; add LALT to place the LEFT stick.
+    "minigame_key": "CAPSLOCK",
+    "minigame_left_key": "LALT",
     "minigame_range": 300,           # mouse distance for a full stick push            # hold = left stick at half speed ("" = off)
     "mouse": {
         "sensitivity": 1.0,    # overall speed

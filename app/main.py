@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -139,8 +139,10 @@ class App:
                                     fg="white", bg="#444", pady=8)
         self.capture_lbl.pack(fill="x")
         tk.Label(self.root, text=f"{self.cfg['toggle_key']} = capture on/off     "
-                 f"{self.cfg['vehicle_key']} = on-foot / vehicle     "
-                 f"{self.cfg.get('minigame_key')} = minigame (hotwire / safe)\n"
+                 f"{self.cfg.get('auto_vehicle_key')} = enter/exit car (switches layout, "
+                 f"{self.cfg['vehicle_key']} = fix)\n"
+                 f"Hold {self.cfg.get('minigame_key')} = mouse holds the stick "
+                 "(hotwire / safe), + Alt = left stick\n"
                  "Capture ON hides this window to the tray (click the tray icon to open)",
                  font=("Segoe UI", 9)).pack(**pad)
 
@@ -197,7 +199,7 @@ class App:
             "LMB shoot, RMB aim, Shift run, Space jump, E interact/vehicle,\n"
             "F melee, R reload, Ctrl crouch, Q cover, Tab holster, C look back,\n"
             "M map, middle mouse = hold to throw, wheel = scope zoom,\n"
-            "Arrows = D-pad (Up phone).  Vehicle (F9): W gas, S brake,\n"
+            "Arrows = D-pad (Up phone).  In a car: W gas, S brake,\n"
             "Space handbrake, LMB shoot, Shift horn, H lights, Q/X indicators.")).pack(**pad)
 
     def _slide(self, key, var, label):
@@ -257,10 +259,10 @@ class App:
         beep(on)
         self.ui_q.put(("capture", None))
 
-    def toggle_minigame(self):
-        self.mapper.set_minigame(not self.mapper.minigame)
-        beep(self.mapper.minigame)
-        self.ui_q.put(("capture", None))
+    def toggle_minigame(self, on: bool):
+        if on != self.mapper.minigame:
+            self.mapper.set_minigame(on)
+            self.ui_q.put(("capture", None))
 
     def toggle_vehicle(self):
         self.mapper.set_vehicle(not self.mapper.vehicle)
