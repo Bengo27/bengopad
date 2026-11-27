@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.6.3"
+VERSION = "0.6.4"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)

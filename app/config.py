@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 10
+LAYOUT_VERSION = 11
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -56,8 +56,8 @@ DEFAULTS = {
     # exactly like on foot, so prompts (slim jim / smash window) and hotwiring
     # work no matter which mode you are in.
     "vehicle": {
-        "W": "R2+LS_UP",           # gas (+ forward, so walking still works)
-        "S": "L2+LS_DOWN",         # brake / reverse (+ back)
+        "W": "R2",                 # gas
+        "S": "L2",                 # brake / reverse
         "MOUSE_LEFT": "R1",        # shoot
         "MOUSE_RIGHT": "",         # nothing (on foot it is L2 = brake in a car!)
         "Q": "LEFT",               # indicate left (hold = vehicle menu)
