@@ -104,12 +104,21 @@ class Mapper:
     def add_mouse(self, dx: float, dy: float):
         with self._lock:
             if self.minigame:
+                # The mouse "traces" the circle: only movement along the
+                # circle (tangent) turns the stick, so you can follow an arc
+                # in any direction (e.g. down the left side for R).
                 step = float(self.cfg.get("minigame_deg_per_count", 0.25))
                 left = self.cfg.get("minigame_left_key") in self._held
+                ang = self._ang_l if left else self._ang_r
+                rad = math.radians(ang)
+                tang = -dx * math.sin(rad) + dy * math.cos(rad)
+                if abs(tang) < 1e-9 and (dx or dy):
+                    tang = dx if abs(dx) >= abs(dy) else dy
+                ang = (ang + tang * step) % 360
                 if left:
-                    self._ang_l = (self._ang_l + dx * step) % 360
+                    self._ang_l = ang
                 else:
-                    self._ang_r = (self._ang_r + dx * step) % 360
+                    self._ang_r = ang
                 return
             self._mdx += dx
             self._mdy += dy
@@ -172,10 +181,13 @@ class Mapper:
             self._l_last = now
             with self._lock:
                 rate = float(self.cfg.get("minigame_key_deg_per_sec", 180))
-                if "A" in self._held:
-                    self._ang_l = (self._ang_l - rate * dt) % 360
-                if "D" in self._held:
+                # clockwise = S / D (down the right side), counter = W / A
+                cw = ("S" in self._held) or ("D" in self._held)
+                ccw = ("W" in self._held) or ("A" in self._held)
+                if cw and not ccw:
                     self._ang_l = (self._ang_l + rate * dt) % 360
+                elif ccw and not cw:
+                    self._ang_l = (self._ang_l - rate * dt) % 360
                 return self._stick_at(self._ang_l)
         with self._lock:
             x = y = 0
