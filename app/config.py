@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 6
+LAYOUT_VERSION = 7
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -18,7 +18,8 @@ DEFAULTS = {
     # the right stick and it stays there; add LALT to place the LEFT stick.
     "minigame_key": "CAPSLOCK",
     "minigame_left_key": "LALT",
-    "minigame_range": 300,           # mouse distance for a full stick push            # hold = left stick at half speed ("" = off)
+    "minigame_range": 300,           # mouse distance for a full stick push
+    "style": "rdr2",                 # key layout style: "rdr2" or "gta5"
     "mouse": {
         "sensitivity": 1.0,    # overall speed
         "curve": 0.85,         # <1 = faster small movements, >1 = more precise
@@ -28,7 +29,7 @@ DEFAULTS = {
     },
     "on_foot": {
         "W": "LS_UP", "S": "LS_DOWN", "A": "LS_LEFT", "D": "LS_RIGHT",
-        "MOUSE_LEFT": "R2",        # shoot
+        "MOUSE_LEFT": "ATTACK",    # punch (Square) / shoot (R2) while aiming
         "MOUSE_RIGHT": "L2",       # aim / interact
         "LSHIFT": "L3",            # run (press again = sprint)
         "SPACE": "CROSS",          # jump / climb
@@ -67,6 +68,19 @@ DEFAULTS = {
         "WHEEL_UP": "", "WHEEL_DOWN": "",  # no phone/minimap while driving
     },
 }
+
+STYLE_NAMES = {"rdr2": "RDR2 style", "gta5": "GTA 5 style"}
+
+
+def style_layout(style: str) -> tuple:
+    """Return (on_foot, vehicle) for a style."""
+    foot = copy.deepcopy(DEFAULTS["on_foot"])
+    veh = copy.deepcopy(DEFAULTS["vehicle"])
+    if style == "gta5":
+        foot["Z"] = "DOWN"          # radar zoom -> minimap
+        veh["E"] = "L3"             # horn (GTA 5 PC)
+        veh["LSHIFT"] = "L3"        # nitrous
+    return foot, veh
 
 
 def config_dir() -> str:

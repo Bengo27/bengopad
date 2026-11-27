@@ -33,6 +33,13 @@ class Mapper:
             lay.update(self.cfg.get("vehicle", {}))
         return lay
 
+    def _resolve(self, target: str) -> str:
+        """ATTACK = R2 (shoot) while aiming, otherwise Square (punch / melee)."""
+        if target == "ATTACK":
+            aiming = any(t == "L2" for n, t in self._held.items() if n == "MOUSE_RIGHT")
+            return "R2" if aiming else "SQUARE"
+        return target
+
     def _press(self, target: str):
         if "+" in target:  # combo like "L3+R3"
             for part in target.split("+"):
@@ -63,7 +70,7 @@ class Mapper:
         with self._lock:
             if name in self._held:
                 return  # key auto-repeat
-            target = self.layout().get(name, "") or ""
+            target = self._resolve(self.layout().get(name, "") or "")
             self._held[name] = target
             self._press(target)
 
@@ -115,7 +122,7 @@ class Mapper:
             self.vehicle = on
             lay = self.layout()
             for name, old in list(self._held.items()):
-                new = lay.get(name, "") or ""
+                new = self._resolve(lay.get(name, "") or "")
                 if new != old:
                     self._release(old)
                     self._held[name] = new

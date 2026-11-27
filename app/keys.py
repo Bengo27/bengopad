@@ -34,4 +34,4 @@ BUTTONS = ["UP", "DOWN", "LEFT", "RIGHT", "L1", "R1", "L2", "R2", "CROSS",
 STICK_DIRS = {"LS_UP": (0, -1), "LS_DOWN": (0, 1), "LS_LEFT": (-1, 0),
               "LS_RIGHT": (1, 0)}
 
-VALID_TARGETS = set(BUTTONS) | set(STICK_DIRS)
+VALID_TARGETS = set(BUTTONS) | set(STICK_DIRS) | {"ATTACK"}

@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.4.3"
+VERSION = "0.5.0"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -55,7 +55,7 @@ class App:
 
         self.root = tk.Tk()
         self.root.title(f"{APP} {VERSION}")
-        self.root.geometry("480x620")
+        self.root.geometry("500x700")
         self.root.resizable(False, True)
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
         self._build()
@@ -196,18 +196,28 @@ class App:
 
         kbox = ttk.LabelFrame(self.root, text="Key mapping")
         kbox.pack(fill="x", **pad)
+        r0 = ttk.Frame(kbox)
+        r0.pack(fill="x", pady=3)
+        ttk.Label(r0, text="Style:").pack(side="left", padx=4)
+        self.style_var = tk.StringVar(value=config.STYLE_NAMES.get(self.cfg.get("style", "rdr2")))
+        cb = ttk.Combobox(r0, textvariable=self.style_var, state="readonly", width=14,
+                          values=list(config.STYLE_NAMES.values()))
+        cb.pack(side="left")
+        cb.bind("<<ComboboxSelected>>", self._style_changed)
         r = ttk.Frame(kbox)
         r.pack(fill="x", pady=3)
         ttk.Button(r, text="Edit mapping (config.json)", command=self.edit_cfg).pack(side="left", padx=4)
         ttk.Button(r, text="Reload", command=self.reload_cfg).pack(side="left")
         tk.Label(self.root, justify="left", font=("Segoe UI", 9), fg="#555", text=(
             "GTA 6 Default layout (RDR2 style):\n"
-            "LMB shoot, RMB aim, Shift run, Space jump, E interact,\n"
+            "LMB punch (shoot while holding RMB), RMB aim, Shift run,\n"
+            "Space jump, E interact,\n"
             "F enter/exit vehicle,\n"
             "R reload/melee, Ctrl crouch, Q cover, Tab holster, C look back,\n"
             "M map, middle mouse = hold to throw, wheel = scope zoom,\n"
             "Arrows = D-pad (Up phone).  In a car: W gas, S brake,\n"
-            "Space handbrake, LMB shoot, Shift horn, H lights, Q/X indicators.")).pack(**pad)
+            "Space handbrake, LMB shoot, Shift horn (GTA5 style: also E),\n"
+            "H lights, Q/X indicators.  GTA5 style: Z = minimap.")).pack(**pad)
 
     def _slide(self, key, var, label):
         self.cfg["mouse"][key] = round(var.get(), 3)
@@ -239,6 +249,16 @@ class App:
                 "- Look / Aim Sensitivity: 12-14\n\n"
                 "Then adjust Sensitivity here until it feels right.\n"
                 "If the camera drifts by itself, raise Anti-deadzone a little."))
+
+    def _style_changed(self, _evt=None):
+        name = self.style_var.get()
+        style = next(k for k, v in config.STYLE_NAMES.items() if v == name)
+        foot, veh = config.style_layout(style)
+        self.mapper.release_all()
+        self.cfg["style"] = style
+        self.cfg["on_foot"] = foot
+        self.cfg["vehicle"] = veh
+        config.save(self.cfg)
 
     def _invert(self):
         self.cfg["mouse"]["invert_y"] = self.inv_var.get()
