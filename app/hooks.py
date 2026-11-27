@@ -138,7 +138,7 @@ class InputHooks:
             if down:
                 self.mapper.input_down(name)
                 if not repeat and name == self.cfg.get("auto_vehicle_key"):
-                    self.on_vehicle()
+                    self.on_vehicle(auto=True)
             else:
                 self.mapper.input_up(name)
         return 1

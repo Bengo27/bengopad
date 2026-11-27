@@ -21,10 +21,14 @@ class Mapper:
         self._mdy = 0.0
         self._rx = 0.0
         self._ry = 0.0
-        # minigame mode: sticks pushed to the edge, mouse rotates them
-        self.minigame = False
-        self._ang_r = -90.0   # degrees, -90 = straight up
-        self._ang_l = -90.0
+        # Hotwire / slim jim: while a "grab" button is held, the mouse moves
+        # that stick to a position and it stays there (starts in the middle).
+        self._grab = {}            # "L"/"R" -> [x, y]
+        self._grab_order = []      # last grabbed stick gets the mouse
+        self._grab_btn = {}        # input name -> "L"/"R"
+        # Right after entering a car (F) and until you first press W/S,
+        # LMB grabs the left stick and RMB the right stick (hotwiring).
+        self.hotwire_phase = False
 
     # ---------- layout ----------
     def layout(self) -> dict:
@@ -66,39 +70,65 @@ class Mapper:
                 self._refs[target] = n - 1
 
     # ---------- input from hooks ----------
-    def _rmb_minigame(self, name: str) -> bool:
-        return (name == "MOUSE_RIGHT" and self.vehicle
-                and self.cfg.get("vehicle_rmb_minigame", True))
+    @property
+    def minigame(self) -> bool:
+        return bool(self._grab)
+
+    def _grab_start(self, name: str, stick: str):
+        self._grab_btn[name] = stick
+        self._grab[stick] = [0.0, 0.0]
+        if stick in self._grab_order:
+            self._grab_order.remove(stick)
+        self._grab_order.append(stick)
+        self._mdx = self._mdy = self._rx = self._ry = 0.0
+
+    def _grab_end(self, name: str):
+        stick = self._grab_btn.pop(name, None)
+        if stick and stick not in self._grab_btn.values():
+            self._grab.pop(stick, None)
+            if stick in self._grab_order:
+                self._grab_order.remove(stick)
 
     def input_down(self, name: str):
-        if self.minigame and name == "MOUSE_LEFT":
-            # hotwire: hold LMB = the mouse moves L and R together (mirrored)
-            with self._lock:
-                self._held[name] = ""
-                self._ang_r = (180.0 - self._ang_l) % 360
-            return
-        if self._rmb_minigame(name):
-            self.set_minigame(True)
-            with self._lock:
-                self._held[name] = ""
-            return
         with self._lock:
-            if name in self._held:
+            if name in self._held or name in self._grab_btn:
                 return  # key auto-repeat
+            if self.vehicle and self.hotwire_phase and name in ("MOUSE_LEFT", "MOUSE_RIGHT"):
+                self._grab_start(name, "L" if name == "MOUSE_LEFT" else "R")
+                return
+            if self.vehicle and name in ("W", "S"):
+                self.hotwire_phase = False   # you are driving now
             target = self._resolve(self.layout().get(name, "") or "")
             self._held[name] = target
             self._press(target)
 
     def input_up(self, name: str):
-        if name == "MOUSE_RIGHT" and self.minigame and self._held.get(name) == "":
-            with self._lock:
-                self._held.pop(name, None)
-            self.set_minigame(False)
-            return
         with self._lock:
+            if name in self._grab_btn:
+                self._grab_end(name)
+                return
             target = self._held.pop(name, None)
             if target:
                 self._release(target)
+
+    def set_minigame(self, on: bool):
+        """Caps Lock held (on foot): grab the right stick."""
+        with self._lock:
+            if on:
+                self._grab_start("__CAPS__", "R")
+            else:
+                self._grab_end("__CAPS__")
+
+    def auto_vehicle(self) -> bool:
+        """The enter/exit key (F) was pressed. Return True if the layout changed."""
+        if not self.vehicle:
+            self.set_vehicle(True)
+            self.hotwire_phase = True
+            return True
+        if self.hotwire_phase:
+            return False  # still getting in (slim jim / smash / hotwire choice)
+        self.set_vehicle(False)
+        return True
 
     def wheel(self, name: str):
         with self._lock:
@@ -109,55 +139,28 @@ class Mapper:
 
     def add_mouse(self, dx: float, dy: float):
         with self._lock:
-            if self.minigame:
-                # The mouse "traces" the circle: only movement along the
-                # circle (tangent) turns the stick, so you can follow an arc
-                # in any direction (e.g. down the left side for R).
-                step = float(self.cfg.get("minigame_deg_per_count", 0.25))
-                both = self._held.get("MOUSE_LEFT") == ""
-                left = both or self.cfg.get("minigame_left_key") in self._held
-                if both:
-                    # slide along the arcs: mouse down = both sticks go down
-                    a = self._ang_l
-                    if a > 180:
-                        a -= 360
-                    a = max(-90.0, min(90.0, a + dy * step))
-                    self._ang_l = a % 360
-                    self._ang_r = (180.0 - a) % 360
-                    return
-                ang = self._ang_l if left else self._ang_r
-                rad = math.radians(ang)
-                tang = -dx * math.sin(rad) + dy * math.cos(rad)
-                if abs(tang) < 1e-9 and (dx or dy):
-                    tang = dx if abs(dx) >= abs(dy) else dy
-                ang = (ang + tang * step) % 360
-                if left:
-                    self._ang_l = ang
-                    if both:  # R mirrors L (L's arc is on the right, R's on the left)
-                        self._ang_r = (180.0 - ang) % 360
-                else:
-                    self._ang_r = ang
+            if self._grab_order:
+                rng = max(float(self.cfg.get("minigame_range", 250)), 20.0)
+                pos = self._grab[self._grab_order[-1]]
+                pos[0] += dx / rng
+                pos[1] += dy / rng
+                mag = math.hypot(pos[0], pos[1])
+                if mag > 1.0:  # at the edge: keep sliding around the circle
+                    pos[0] /= mag
+                    pos[1] /= mag
                 return
             self._mdx += dx
             self._mdy += dy
-
-    def set_minigame(self, on: bool):
-        with self._lock:
-            self.minigame = on
-            self._ang_r = self._ang_l = -90.0
-            self._l_last = time.perf_counter()
-            self._mdx = self._mdy = self._rx = self._ry = 0.0
-
-    def _stick_at(self, angle: float) -> tuple:
-        tilt = min(max(float(self.cfg.get("minigame_tilt", 1.0)), 0.1), 1.0)
-        rad = math.radians(angle)
-        return math.cos(rad) * tilt, math.sin(rad) * tilt
 
     def set_vehicle(self, on: bool):
         with self._lock:
             if on == self.vehicle:
                 return
             self.vehicle = on
+            self.hotwire_phase = False
+            for name in list(self._grab_btn):
+                if name != "__CAPS__":
+                    self._grab_end(name)
             lay = self.layout()
             for name, old in list(self._held.items()):
                 new = self._resolve(lay.get(name, "") or "")
@@ -174,7 +177,9 @@ class Mapper:
                 self._release(target)
             self._held.clear()
             self._taps.clear()
-            self._ang_r = self._ang_l = -90.0
+            self._grab.clear()
+            self._grab_order.clear()
+            self._grab_btn.clear()
             self._mdx = self._mdy = 0.0
             self._rx = self._ry = 0.0
 
@@ -193,33 +198,21 @@ class Mapper:
             return events
 
     def left_stick(self) -> tuple:
-        if self.minigame:
-            now = time.perf_counter()
-            dt = min(now - getattr(self, "_l_last", now), 0.05)
-            self._l_last = now
-            with self._lock:
-                rate = float(self.cfg.get("minigame_key_deg_per_sec", 180))
-                # clockwise = S / D (down the right side), counter = W / A
-                cw = ("S" in self._held) or ("D" in self._held)
-                ccw = ("W" in self._held) or ("A" in self._held)
-                if cw and not ccw:
-                    self._ang_l = (self._ang_l + rate * dt) % 360
-                elif ccw and not cw:
-                    self._ang_l = (self._ang_l - rate * dt) % 360
-                return self._stick_at(self._ang_l)
         with self._lock:
+            if "L" in self._grab:
+                return tuple(self._grab["L"])
             x = y = 0
             for target in self._held.values():
-                d = STICK_DIRS.get(target)
-                if d:
-                    x += d[0]
-                    y += d[1]
+                for part in target.split("+"):
+                    d = STICK_DIRS.get(part.strip())
+                    if d:
+                        x += d[0]
+                        y += d[1]
             walk = self.cfg.get("walk_key", "") in self._held
-            abs_l = self._stick_at(self._ang_l)
         x = max(-1, min(1, x))
         y = max(-1, min(1, y))
         if x == 0 and y == 0:
-            return abs_l if self.minigame else (0.0, 0.0)
+            return 0.0, 0.0
         mag = 0.5 if walk else 1.0
         norm = math.hypot(x, y)
         return x / norm * mag, y / norm * mag
@@ -227,9 +220,9 @@ class Mapper:
     def right_stick(self, dt: float) -> tuple:
         """Mouse speed -> right stick position."""
         m = self.cfg["mouse"]
-        if self.minigame:
-            with self._lock:
-                return self._stick_at(self._ang_r)
+        with self._lock:
+            if "R" in self._grab:
+                return tuple(self._grab["R"])
         with self._lock:
             dx, dy = self._mdx, self._mdy
             self._mdx = self._mdy = 0.0

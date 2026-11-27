@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 8
+LAYOUT_VERSION = 9
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -14,15 +14,11 @@ DEFAULTS = {
     "auto_vehicle_key": "F",   # enter/exit vehicle key also switches the layout
     "vehicle_key": "B",        # manual fix if the layout got out of sync
     "walk_key": "",
-    # Minigame (hotwiring, slim jim, safes...): while holding this key both sticks
-    # are pushed to the edge and moving the mouse left/right ROTATES the right
-    # stick around the circle. Add LALT to rotate the LEFT stick instead.
+    # Hotwire / slim jim: after pressing F (until you press W/S to drive),
+    # hold LMB = mouse moves the LEFT stick, hold RMB = mouse moves the RIGHT
+    # stick. On foot, hold Caps Lock = mouse moves the right stick.
     "minigame_key": "CAPSLOCK",
-    "minigame_left_key": "LALT",
-    "minigame_deg_per_count": 0.25,  # rotation speed (higher = faster)
-    "minigame_tilt": 1.0,            # how far the sticks are pushed (0.1 - 1.0)
-    "vehicle_rmb_minigame": True,    # in a car, holding RMB does the same (hotwire)
-    "minigame_key_deg_per_sec": 180, # A/D rotate the left stick this fast
+    "minigame_range": 250,           # mouse distance for a full stick push
     "style": "rdr2",                 # key layout style: "rdr2" or "gta5"
     "mouse": {
         "sensitivity": 1.0,    # overall speed
@@ -60,8 +56,8 @@ DEFAULTS = {
     # exactly like on foot, so prompts (slim jim / smash window) and hotwiring
     # work no matter which mode you are in.
     "vehicle": {
-        "W": "R2",                 # gas
-        "S": "L2",                 # brake / reverse
+        "W": "R2+LS_UP",           # gas (+ forward, so walking still works)
+        "S": "L2+LS_DOWN",         # brake / reverse (+ back)
         "MOUSE_LEFT": "R1",        # shoot
         "Q": "LEFT",               # indicate left (hold = vehicle menu)
         "X": "RIGHT",              # indicate right (hold = partner menu)

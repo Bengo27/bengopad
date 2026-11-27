@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.6.0"
+VERSION = "0.6.1"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -171,9 +171,8 @@ class App:
         tk.Label(self.root, text=f"{self.cfg['toggle_key']} = capture on/off     "
                  f"{self.cfg.get('auto_vehicle_key')} = enter/exit car (switches layout, "
                  f"{self.cfg['vehicle_key']} = fix)\n"
-                 "Hotwire: in a car hold RMB. Move the mouse along R's arc to turn R,\n"
-                 f"S/D move L down its arc, W/A move it up, hold LMB = mouse moves L+R together.\n"
-                 f"On foot: hold {self.cfg.get('minigame_key')} instead of RMB.\n"
+                 "Hotwire (after F, before driving): hold LMB = mouse moves L stick,\n"
+                 "hold RMB = mouse moves R stick. Press W to drive.\n"
                  "Capture ON hides this window to the tray (click the tray icon to open)",
                  font=("Segoe UI", 9)).pack(**pad)
 
@@ -325,7 +324,9 @@ class App:
         if self.hooks.capturing:
             mode = "VEHICLE" if self.mapper.vehicle else "ON FOOT"
             if self.mapper.minigame:
-                mode += " + MINIGAME"
+                mode += " + STICK"
+            elif self.mapper.vehicle and self.mapper.hotwire_phase:
+                mode += " (hotwire)"
             self.capture_lbl.config(text=f"CAPTURE ON - {mode}", bg="#0a7d2c")
         else:
             self.capture_lbl.config(text="CAPTURE OFF", bg="#444")
@@ -344,12 +345,14 @@ class App:
         self.ui_q.put(("capture", None))
 
     def toggle_minigame(self, on: bool):
-        if on != self.mapper.minigame:
-            self.mapper.set_minigame(on)
-            self.ui_q.put(("capture", None))
+        self.mapper.set_minigame(on)
+        self.ui_q.put(("capture", None))
 
-    def toggle_vehicle(self):
-        self.mapper.set_vehicle(not self.mapper.vehicle)
+    def toggle_vehicle(self, auto=False):
+        if auto:
+            self.mapper.auto_vehicle()
+        else:
+            self.mapper.set_vehicle(not self.mapper.vehicle)
         self.ui_q.put(("capture", None))
 
     # ---------- actions ----------
