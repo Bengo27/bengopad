@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 9
+LAYOUT_VERSION = 10
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -59,6 +59,7 @@ DEFAULTS = {
         "W": "R2+LS_UP",           # gas (+ forward, so walking still works)
         "S": "L2+LS_DOWN",         # brake / reverse (+ back)
         "MOUSE_LEFT": "R1",        # shoot
+        "MOUSE_RIGHT": "",         # nothing (on foot it is L2 = brake in a car!)
         "Q": "LEFT",               # indicate left (hold = vehicle menu)
         "X": "RIGHT",              # indicate right (hold = partner menu)
         "H": "CIRCLE",             # headlights
