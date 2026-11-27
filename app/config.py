@@ -3,12 +3,17 @@ import copy
 import json
 import os
 
+LAYOUT_VERSION = 2
+
+# Based on GTA 5 PC keys -> PlayStation buttons
+# (in GTA 6 pick the "Classic" control scheme, which works like GTA 5)
 DEFAULTS = {
+    "layout_version": LAYOUT_VERSION,
     "host": "",
     "user": "",
     "toggle_key": "F8",        # capture on/off (always works)
     "vehicle_key": "F9",       # switch on-foot / vehicle layout
-    "walk_key": "LALT",        # hold = left stick at half speed
+    "walk_key": "",            # hold = left stick at half speed ("" = off)
     "mouse": {
         "sensitivity": 1.0,    # overall speed
         "curve": 0.85,         # <1 = faster small movements, >1 = more precise
@@ -18,19 +23,38 @@ DEFAULTS = {
     },
     "on_foot": {
         "W": "LS_UP", "S": "LS_DOWN", "A": "LS_LEFT", "D": "LS_RIGHT",
-        "MOUSE_LEFT": "R2", "MOUSE_RIGHT": "L2", "MOUSE_MIDDLE": "R3",
-        "SPACE": "SQUARE", "LSHIFT": "CROSS", "F": "TRIANGLE", "R": "CIRCLE",
-        "Q": "R1", "TAB": "L1", "LCTRL": "L3", "V": "R3",
-        "E": "RIGHT", "G": "LEFT", "X": "DOWN", "Z": "UP",
+        "MOUSE_LEFT": "R2",        # shoot
+        "MOUSE_RIGHT": "L2",       # aim
+        "LSHIFT": "CROSS",         # sprint
+        "SPACE": "SQUARE",         # jump
+        "F": "TRIANGLE",           # enter vehicle
+        "R": "CIRCLE",             # reload / melee
+        "Q": "R1",                 # cover
+        "TAB": "L1",               # weapon wheel
+        "LCTRL": "L3",             # stealth / crouch
+        "C": "R3",                 # look behind
+        "CAPSLOCK": "L3+R3",       # special ability
+        "V": "SHARE",              # change camera
+        "M": "TOUCHPAD",           # map
+        "ESC": "OPTIONS", "P": "OPTIONS",  # pause
         "UP": "UP", "DOWN": "DOWN", "LEFT": "LEFT", "RIGHT": "RIGHT",
-        "ESC": "OPTIONS", "M": "TOUCHPAD", "F1": "SHARE",
-        "WHEEL_UP": "", "WHEEL_DOWN": "",
+        "LALT": "DOWN",            # character wheel / minimap (hold)
+        "WHEEL_UP": "LEFT",        # previous weapon
+        "WHEEL_DOWN": "RIGHT",     # next weapon
+        "E": "", "G": "", "X": "", "Z": "", "MOUSE_MIDDLE": "",
     },
     # Only the keys listed here change in vehicle mode; the rest come from on_foot
     "vehicle": {
-        "W": "R2", "S": "L2", "A": "LS_LEFT", "D": "LS_RIGHT",
-        "SPACE": "R1", "MOUSE_LEFT": "", "MOUSE_RIGHT": "",
-        "LSHIFT": "CROSS",
+        "W": "R2",                 # gas
+        "S": "L2",                 # brake / reverse
+        "A": "LS_LEFT", "D": "LS_RIGHT",
+        "SPACE": "R1",             # handbrake
+        "E": "L3",                 # horn
+        "H": "RIGHT",              # headlights
+        "Q": "LEFT",               # radio
+        "MOUSE_RIGHT": "L1",       # drive-by aim
+        "MOUSE_LEFT": "R1",        # drive-by shoot (with aim held)
+        "LSHIFT": "", "WHEEL_UP": "", "WHEEL_DOWN": "",
     },
 }
 
@@ -62,7 +86,14 @@ def load() -> dict:
     if os.path.exists(path):
         try:
             with open(path, encoding="utf-8") as f:
-                return _merge(DEFAULTS, json.load(f))
+                user = json.load(f)
+            if user.get("layout_version") != LAYOUT_VERSION:
+                # new default layout: keep connection + mouse settings only
+                user = {k: user[k] for k in ("host", "user", "mouse") if k in user}
+                cfg = _merge(DEFAULTS, user)
+                save(cfg)
+                return cfg
+            return _merge(DEFAULTS, user)
         except (OSError, ValueError):
             pass
     cfg = copy.deepcopy(DEFAULTS)

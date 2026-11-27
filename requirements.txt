@@ -4,3 +4,5 @@ protobuf>=4.25
 requests>=2.31
 aiohttp>=3.9
 pyee>=11
+pystray>=0.19
+pillow>=10

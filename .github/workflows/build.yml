@@ -22,7 +22,7 @@ jobs:
       - name: Build
         run: >
           pyinstaller --noconfirm --onefile --windowed --name BengoPad
-          --paths app --collect-submodules pyremoteplay app/main.py
+          --paths app --collect-submodules pyremoteplay --collect-submodules pystray app/main.py
       - uses: actions/upload-artifact@v4
         with:
           name: BengoPad

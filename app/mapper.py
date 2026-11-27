@@ -30,6 +30,10 @@ class Mapper:
         return lay
 
     def _press(self, target: str):
+        if "+" in target:  # combo like "L3+R3"
+            for part in target.split("+"):
+                self._press(part.strip())
+            return
         if target in BUTTONS:
             n = self._refs.get(target, 0)
             self._refs[target] = n + 1
@@ -37,6 +41,10 @@ class Mapper:
                 self._events.append((target, True))
 
     def _release(self, target: str):
+        if "+" in target:
+            for part in target.split("+"):
+                self._release(part.strip())
+            return
         if target in BUTTONS:
             n = self._refs.get(target, 0)
             if n <= 1:

@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.1.2"
+VERSION = "0.2.0"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -54,14 +54,52 @@ class App:
 
         self.root = tk.Tk()
         self.root.title(f"{APP} {VERSION}")
-        self.root.geometry("460x560")
+        self.root.geometry("480x620")
         self.root.resizable(False, True)
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
         self._build()
         self._fix_clipboard_keys()
+        self._start_tray()
         self.hooks.start()
         self.root.after(50, self._poll)
         self._refresh_account()
+
+    # ---------- system tray ----------
+    def _start_tray(self):
+        self.tray = None
+        try:
+            import pystray
+            from PIL import Image, ImageDraw
+        except Exception:  # pylint: disable=broad-except
+            logging.exception("tray unavailable")
+            return
+
+        def dot(color):
+            img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+            d = ImageDraw.Draw(img)
+            d.ellipse((4, 4, 60, 60), fill=color)
+            d.text((22, 20), "B", fill="white")
+            return img
+        self._icons = {True: dot("#0a7d2c"), False: dot("#555555")}
+        menu = pystray.Menu(
+            pystray.MenuItem("Show Bengo Pad", lambda *_: self.ui_q.put(("call", self.show)), default=True),
+            pystray.MenuItem("Quit", lambda *_: self.ui_q.put(("call", self.quit))))
+        self.tray = pystray.Icon("BengoPad", self._icons[False], "Bengo Pad - capture OFF", menu)
+        self.tray.run_detached()
+
+    def _tray_state(self, on: bool):
+        if self.tray:
+            self.tray.icon = self._icons[on]
+            self.tray.title = f"Bengo Pad - capture {'ON' if on else 'OFF'}"
+
+    def hide(self):
+        if self.tray:
+            self.root.withdraw()
+
+    def show(self):
+        self.root.deiconify()
+        self.root.lift()
+        self.root.focus_force()
 
     # ---------- clipboard (works with Hebrew keyboard layout too) ----------
     def _fix_clipboard_keys(self):
@@ -100,7 +138,8 @@ class App:
                                     fg="white", bg="#444", pady=8)
         self.capture_lbl.pack(fill="x")
         tk.Label(self.root, text=f"{self.cfg['toggle_key']} = capture on/off     "
-                 f"{self.cfg['vehicle_key']} = on-foot / vehicle layout",
+                 f"{self.cfg['vehicle_key']} = on-foot / vehicle\n"
+                 "Capture ON hides this window to the tray (click the tray icon to open)",
                  font=("Segoe UI", 9)).pack(**pad)
 
         box = ttk.LabelFrame(self.root, text="PS5")
@@ -152,10 +191,11 @@ class App:
         ttk.Button(r, text="Edit mapping (config.json)", command=self.edit_cfg).pack(side="left", padx=4)
         ttk.Button(r, text="Reload", command=self.reload_cfg).pack(side="left")
         tk.Label(self.root, justify="left", font=("Segoe UI", 9), fg="#555", text=(
-            "Default: WASD move, mouse look, LMB=R2, RMB=L2, Space=Square,\n"
-            "Shift=Cross, F=Triangle, R=Circle, Q=R1, Tab=L1, Ctrl=L3, V=R3,\n"
-            "Esc=Options, M=Touchpad. Vehicle layout: W=R2, S=L2, Space=R1.\n"
-            "Keep Veyra in front, then press the capture key.")).pack(**pad)
+            "GTA-style layout (use the Classic scheme in GTA 6):\n"
+            "LMB shoot, RMB aim, Shift sprint, Space jump, F vehicle, R reload,\n"
+            "Q cover, Tab weapons, Ctrl stealth, C look back, Caps ability,\n"
+            "V camera, M map, Alt char wheel, wheel = prev/next weapon.\n"
+            "Vehicle (F9): W gas, S brake, Space handbrake, E horn, H lights.")).pack(**pad)
 
     def _slide(self, key, var, label):
         self.cfg["mouse"][key] = round(var.get(), 3)
@@ -183,6 +223,9 @@ class App:
                         self._set_capture(False)
                 elif kind == "capture":
                     self._paint_capture()
+                    self._tray_state(self.hooks.capturing)
+                    if self.hooks.capturing:
+                        self.hide()
                 elif kind == "call":
                     val()
         except queue.Empty:
@@ -316,6 +359,8 @@ class App:
         messagebox.showinfo(APP, "Mapping reloaded.")
 
     def quit(self):
+        if self.tray:
+            self.tray.stop()
         self.hooks.set_capture(False)
         self.hooks.stop()
         self.link.disconnect()
