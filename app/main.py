@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.4.2"
+VERSION = "0.4.3"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -299,7 +299,6 @@ class App:
 
     def toggle_vehicle(self):
         self.mapper.set_vehicle(not self.mapper.vehicle)
-        beep(True)
         self.ui_q.put(("capture", None))
 
     # ---------- actions ----------
