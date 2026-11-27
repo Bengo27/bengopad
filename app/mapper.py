@@ -66,7 +66,16 @@ class Mapper:
                 self._refs[target] = n - 1
 
     # ---------- input from hooks ----------
+    def _rmb_minigame(self, name: str) -> bool:
+        return (name == "MOUSE_RIGHT" and self.vehicle
+                and self.cfg.get("vehicle_rmb_minigame", True))
+
     def input_down(self, name: str):
+        if self._rmb_minigame(name):
+            self.set_minigame(True)
+            with self._lock:
+                self._held[name] = ""
+            return
         with self._lock:
             if name in self._held:
                 return  # key auto-repeat
@@ -75,6 +84,11 @@ class Mapper:
             self._press(target)
 
     def input_up(self, name: str):
+        if name == "MOUSE_RIGHT" and self.minigame and self._held.get(name) == "":
+            with self._lock:
+                self._held.pop(name, None)
+            self.set_minigame(False)
+            return
         with self._lock:
             target = self._held.pop(name, None)
             if target:
@@ -104,6 +118,7 @@ class Mapper:
         with self._lock:
             self.minigame = on
             self._ang_r = self._ang_l = -90.0
+            self._l_last = time.perf_counter()
             self._mdx = self._mdy = self._rx = self._ry = 0.0
 
     def _stick_at(self, angle: float) -> tuple:
@@ -151,6 +166,17 @@ class Mapper:
             return events
 
     def left_stick(self) -> tuple:
+        if self.minigame:
+            now = time.perf_counter()
+            dt = min(now - getattr(self, "_l_last", now), 0.05)
+            self._l_last = now
+            with self._lock:
+                rate = float(self.cfg.get("minigame_key_deg_per_sec", 180))
+                if "A" in self._held:
+                    self._ang_l = (self._ang_l - rate * dt) % 360
+                if "D" in self._held:
+                    self._ang_l = (self._ang_l + rate * dt) % 360
+                return self._stick_at(self._ang_l)
         with self._lock:
             x = y = 0
             for target in self._held.values():

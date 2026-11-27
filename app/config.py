@@ -21,6 +21,8 @@ DEFAULTS = {
     "minigame_left_key": "LALT",
     "minigame_deg_per_count": 0.25,  # rotation speed (higher = faster)
     "minigame_tilt": 1.0,            # how far the sticks are pushed (0.1 - 1.0)
+    "vehicle_rmb_minigame": True,    # in a car, holding RMB does the same (hotwire)
+    "minigame_key_deg_per_sec": 180, # A/D rotate the left stick this fast
     "style": "rdr2",                 # key layout style: "rdr2" or "gta5"
     "mouse": {
         "sensitivity": 1.0,    # overall speed
