@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.2.2"
+VERSION = "0.3.0"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -50,7 +50,8 @@ class App:
         self.mapper = Mapper(self.cfg)
         self.ui_q = queue.Queue()
         self.link = rp.Link(self.mapper, lambda s: self.ui_q.put(("status", s)))
-        self.hooks = InputHooks(self.mapper, self.toggle_capture, self.toggle_vehicle, self.cfg)
+        self.hooks = InputHooks(self.mapper, self.toggle_capture, self.toggle_vehicle,
+                                self.cfg, self.toggle_minigame)
 
         self.root = tk.Tk()
         self.root.title(f"{APP} {VERSION}")
@@ -138,7 +139,8 @@ class App:
                                     fg="white", bg="#444", pady=8)
         self.capture_lbl.pack(fill="x")
         tk.Label(self.root, text=f"{self.cfg['toggle_key']} = capture on/off     "
-                 f"{self.cfg['vehicle_key']} = on-foot / vehicle\n"
+                 f"{self.cfg['vehicle_key']} = on-foot / vehicle     "
+                 f"{self.cfg.get('minigame_key')} = minigame (hotwire / safe)\n"
                  "Capture ON hides this window to the tray (click the tray icon to open)",
                  font=("Segoe UI", 9)).pack(**pad)
 
@@ -236,6 +238,8 @@ class App:
     def _paint_capture(self):
         if self.hooks.capturing:
             mode = "VEHICLE" if self.mapper.vehicle else "ON FOOT"
+            if self.mapper.minigame:
+                mode += " + MINIGAME"
             self.capture_lbl.config(text=f"CAPTURE ON - {mode}", bg="#0a7d2c")
         else:
             self.capture_lbl.config(text="CAPTURE OFF", bg="#444")
@@ -251,6 +255,11 @@ class App:
     def _set_capture(self, on: bool):
         self.hooks.set_capture(on)
         beep(on)
+        self.ui_q.put(("capture", None))
+
+    def toggle_minigame(self):
+        self.mapper.set_minigame(not self.mapper.minigame)
+        beep(self.mapper.minigame)
         self.ui_q.put(("capture", None))
 
     def toggle_vehicle(self):

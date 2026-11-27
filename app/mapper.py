@@ -21,6 +21,10 @@ class Mapper:
         self._mdy = 0.0
         self._rx = 0.0
         self._ry = 0.0
+        # minigame mode: the mouse places the sticks and they stay there
+        self.minigame = False
+        self._abs_r = [0.0, 0.0]
+        self._abs_l = [0.0, 0.0]
 
     # ---------- layout ----------
     def layout(self) -> dict:
@@ -56,6 +60,9 @@ class Mapper:
 
     # ---------- input from hooks ----------
     def input_down(self, name: str):
+        if self.minigame and name == self.cfg.get("minigame_center_key"):
+            self.center_sticks()
+            return
         with self._lock:
             if name in self._held:
                 return  # key auto-repeat
@@ -78,8 +85,31 @@ class Mapper:
 
     def add_mouse(self, dx: float, dy: float):
         with self._lock:
+            if self.minigame:
+                rng = max(float(self.cfg.get("minigame_range", 300)), 20.0)
+                left = self.cfg.get("minigame_left_key") in self._held
+                pos = self._abs_l if left else self._abs_r
+                pos[0] += dx / rng
+                pos[1] += dy / rng
+                mag = math.hypot(*pos)
+                if mag > 1.0:
+                    pos[0] /= mag
+                    pos[1] /= mag
+                return
             self._mdx += dx
             self._mdy += dy
+
+    def set_minigame(self, on: bool):
+        with self._lock:
+            self.minigame = on
+            self._abs_r = [0.0, 0.0]
+            self._abs_l = [0.0, 0.0]
+            self._mdx = self._mdy = self._rx = self._ry = 0.0
+
+    def center_sticks(self):
+        with self._lock:
+            self._abs_r = [0.0, 0.0]
+            self._abs_l = [0.0, 0.0]
 
     def set_vehicle(self, on: bool):
         with self._lock:
@@ -102,6 +132,8 @@ class Mapper:
                 self._release(target)
             self._held.clear()
             self._taps.clear()
+            self._abs_r = [0.0, 0.0]
+            self._abs_l = [0.0, 0.0]
             self._mdx = self._mdy = 0.0
             self._rx = self._ry = 0.0
 
@@ -128,10 +160,11 @@ class Mapper:
                     x += d[0]
                     y += d[1]
             walk = self.cfg.get("walk_key", "") in self._held
+            abs_l = tuple(self._abs_l)
         x = max(-1, min(1, x))
         y = max(-1, min(1, y))
         if x == 0 and y == 0:
-            return 0.0, 0.0
+            return abs_l if self.minigame else (0.0, 0.0)
         mag = 0.5 if walk else 1.0
         norm = math.hypot(x, y)
         return x / norm * mag, y / norm * mag
@@ -139,6 +172,9 @@ class Mapper:
     def right_stick(self, dt: float) -> tuple:
         """Mouse speed -> right stick position."""
         m = self.cfg["mouse"]
+        if self.minigame:
+            with self._lock:
+                return tuple(self._abs_r)
         with self._lock:
             dx, dy = self._mdx, self._mdy
             self._mdx = self._mdy = 0.0

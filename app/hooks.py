@@ -60,7 +60,8 @@ MOUSE_BTN = {
 
 
 class InputHooks:
-    def __init__(self, mapper, on_toggle, on_vehicle, cfg):
+    def __init__(self, mapper, on_toggle, on_vehicle, cfg, on_minigame=None):
+        self.on_minigame = on_minigame
         self.mapper = mapper
         self.on_toggle = on_toggle
         self.on_vehicle = on_vehicle
@@ -127,6 +128,10 @@ class InputHooks:
         if vk == VK.get(self.cfg["vehicle_key"]):
             if down and not repeat:
                 self.on_vehicle()
+            return 1
+        if vk == VK.get(self.cfg.get("minigame_key", "")):
+            if down and not repeat and self.on_minigame:
+                self.on_minigame()
             return 1
         name = VK_NAME.get(vk)
         if name:
