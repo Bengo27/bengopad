@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -58,9 +58,38 @@ class App:
         self.root.resizable(False, True)
         self.root.protocol("WM_DELETE_WINDOW", self.quit)
         self._build()
+        self._fix_clipboard_keys()
         self.hooks.start()
         self.root.after(50, self._poll)
         self._refresh_account()
+
+    # ---------- clipboard (works with Hebrew keyboard layout too) ----------
+    def _fix_clipboard_keys(self):
+        actions = {86: "<<Paste>>", 67: "<<Copy>>", 88: "<<Cut>>"}
+
+        def on_ctrl(event):
+            if event.keysym.lower() in ("v", "c", "x", "a"):
+                return None  # English layout - Tk already handles it
+            if event.keycode in actions:
+                event.widget.event_generate(actions[event.keycode])
+                return "break"
+            if event.keycode == 65 and hasattr(event.widget, "select_range"):
+                event.widget.select_range(0, "end")
+                return "break"
+            return None
+
+        menu = tk.Menu(self.root, tearoff=0)
+
+        def on_right(event):
+            w = event.widget
+            menu.delete(0, "end")
+            for label, ev in (("Paste", "<<Paste>>"), ("Copy", "<<Copy>>"), ("Cut", "<<Cut>>")):
+                menu.add_command(label=label, command=lambda e=ev: w.event_generate(e))
+            menu.tk_popup(event.x_root, event.y_root)
+
+        for cls in ("Entry", "TEntry"):
+            self.root.bind_class(cls, "<Control-KeyPress>", on_ctrl, add="+")
+            self.root.bind_class(cls, "<Button-3>", on_right, add="+")
 
     # ---------- UI ----------
     def _build(self):
