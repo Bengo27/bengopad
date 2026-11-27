@@ -15,7 +15,7 @@ import config  # noqa: E402
 from mapper import Mapper  # noqa: E402
 
 APP = "Bengo Pad"
-VERSION = "0.6.4"
+VERSION = "0.6.5"
 
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -196,6 +196,8 @@ class App:
         ttk.Button(row3, text="Disconnect", command=self.link.disconnect).pack(side="left")
         self.status_lbl = ttk.Label(box, text="Not connected", foreground="#a00")
         self.status_lbl.pack(anchor="w", padx=4, pady=3)
+        self.live_lbl = ttk.Label(box, text="Sending: -", foreground="#555")
+        self.live_lbl.pack(anchor="w", padx=4, pady=(0, 3))
 
         mbox = ttk.LabelFrame(self.root, text="Mouse -> right stick")
         mbox.pack(fill="x", **pad)
@@ -318,7 +320,21 @@ class App:
                     val()
         except queue.Empty:
             pass
+        self._show_live()
         self.root.after(50, self._poll)
+
+    def _show_live(self):
+        """Show which buttons are being held right now (to spot stuck ones)."""
+        if self.root.state() == "withdrawn":
+            return
+        btns = sorted(self.mapper._refs)  # pylint: disable=protected-access
+        lx, ly = self.mapper.left_stick()
+        parts = btns[:]
+        if abs(lx) > 0.05 or abs(ly) > 0.05:
+            parts.append(f"L({lx:+.1f},{ly:+.1f})")
+        if self.mapper.minigame:
+            parts.append("stick-grab")
+        self.live_lbl.config(text="Sending: " + (", ".join(parts) if parts else "nothing"))
 
     def _paint_capture(self):
         if self.hooks.capturing:
