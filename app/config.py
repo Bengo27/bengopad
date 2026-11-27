@@ -14,11 +14,13 @@ DEFAULTS = {
     "auto_vehicle_key": "F",   # enter/exit vehicle key also switches the layout
     "vehicle_key": "B",        # manual fix if the layout got out of sync
     "walk_key": "",
-    # Minigame (hotwiring, safes...): while holding this key the mouse PLACES
-    # the right stick and it stays there; add LALT to place the LEFT stick.
+    # Minigame (hotwiring, slim jim, safes...): while holding this key both sticks
+    # are pushed to the edge and moving the mouse left/right ROTATES the right
+    # stick around the circle. Add LALT to rotate the LEFT stick instead.
     "minigame_key": "CAPSLOCK",
     "minigame_left_key": "LALT",
-    "minigame_range": 300,           # mouse distance for a full stick push
+    "minigame_deg_per_count": 0.25,  # rotation speed (higher = faster)
+    "minigame_tilt": 1.0,            # how far the sticks are pushed (0.1 - 1.0)
     "style": "rdr2",                 # key layout style: "rdr2" or "gta5"
     "mouse": {
         "sensitivity": 1.0,    # overall speed

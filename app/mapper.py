@@ -21,10 +21,10 @@ class Mapper:
         self._mdy = 0.0
         self._rx = 0.0
         self._ry = 0.0
-        # minigame mode: the mouse places the sticks and they stay there
+        # minigame mode: sticks pushed to the edge, mouse rotates them
         self.minigame = False
-        self._abs_r = [0.0, 0.0]
-        self._abs_l = [0.0, 0.0]
+        self._ang_r = -90.0   # degrees, -90 = straight up
+        self._ang_l = -90.0
 
     # ---------- layout ----------
     def layout(self) -> dict:
@@ -90,15 +90,12 @@ class Mapper:
     def add_mouse(self, dx: float, dy: float):
         with self._lock:
             if self.minigame:
-                rng = max(float(self.cfg.get("minigame_range", 300)), 20.0)
+                step = float(self.cfg.get("minigame_deg_per_count", 0.25))
                 left = self.cfg.get("minigame_left_key") in self._held
-                pos = self._abs_l if left else self._abs_r
-                pos[0] += dx / rng
-                pos[1] += dy / rng
-                mag = math.hypot(*pos)
-                if mag > 1.0:
-                    pos[0] /= mag
-                    pos[1] /= mag
+                if left:
+                    self._ang_l = (self._ang_l + dx * step) % 360
+                else:
+                    self._ang_r = (self._ang_r + dx * step) % 360
                 return
             self._mdx += dx
             self._mdy += dy
@@ -106,14 +103,13 @@ class Mapper:
     def set_minigame(self, on: bool):
         with self._lock:
             self.minigame = on
-            self._abs_r = [0.0, 0.0]
-            self._abs_l = [0.0, 0.0]
+            self._ang_r = self._ang_l = -90.0
             self._mdx = self._mdy = self._rx = self._ry = 0.0
 
-    def center_sticks(self):
-        with self._lock:
-            self._abs_r = [0.0, 0.0]
-            self._abs_l = [0.0, 0.0]
+    def _stick_at(self, angle: float) -> tuple:
+        tilt = min(max(float(self.cfg.get("minigame_tilt", 1.0)), 0.1), 1.0)
+        rad = math.radians(angle)
+        return math.cos(rad) * tilt, math.sin(rad) * tilt
 
     def set_vehicle(self, on: bool):
         with self._lock:
@@ -136,8 +132,7 @@ class Mapper:
                 self._release(target)
             self._held.clear()
             self._taps.clear()
-            self._abs_r = [0.0, 0.0]
-            self._abs_l = [0.0, 0.0]
+            self._ang_r = self._ang_l = -90.0
             self._mdx = self._mdy = 0.0
             self._rx = self._ry = 0.0
 
@@ -164,7 +159,7 @@ class Mapper:
                     x += d[0]
                     y += d[1]
             walk = self.cfg.get("walk_key", "") in self._held
-            abs_l = tuple(self._abs_l)
+            abs_l = self._stick_at(self._ang_l)
         x = max(-1, min(1, x))
         y = max(-1, min(1, y))
         if x == 0 and y == 0:
@@ -178,7 +173,7 @@ class Mapper:
         m = self.cfg["mouse"]
         if self.minigame:
             with self._lock:
-                return tuple(self._abs_r)
+                return self._stick_at(self._ang_r)
         with self._lock:
             dx, dy = self._mdx, self._mdy
             self._mdx = self._mdy = 0.0
