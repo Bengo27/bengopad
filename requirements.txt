@@ -1,0 +1,6 @@
+cryptography>=42
+pycryptodomex>=3.20
+protobuf>=4.25
+requests>=2.31
+aiohttp>=3.9
+pyee>=11
