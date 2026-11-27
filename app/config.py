@@ -3,7 +3,7 @@ import copy
 import json
 import os
 
-LAYOUT_VERSION = 3
+LAYOUT_VERSION = 4
 
 # GTA 6 "Default" control scheme (RDR2-style) with RDR2 PC keys
 DEFAULTS = {
@@ -39,8 +39,11 @@ DEFAULTS = {
         "DOWN": "DOWN",            # objective / minimap
         "RIGHT": "RIGHT",          # detonate explosives
         "V": "SHARE",              # (create button)
-        "R": "", "G": "", "X": "", "Z": "", "CAPSLOCK": "", "LALT": "",
-        "MOUSE_MIDDLE": "", "WHEEL_UP": "", "WHEEL_DOWN": "",
+        "R": "SQUARE",             # reload
+        "MOUSE_MIDDLE": "R1",      # hold = quick throw (grenade)
+        "WHEEL_UP": "UP",          # zoom in while aiming
+        "WHEEL_DOWN": "DOWN",      # zoom out while aiming
+        "G": "", "X": "", "Z": "", "CAPSLOCK": "", "LALT": "",
     },
     # Only the keys listed here change in vehicle mode; the rest come from on_foot
     "vehicle": {
@@ -55,6 +58,7 @@ DEFAULTS = {
         "LCTRL": "",
         "Q": "LEFT",               # indicate left
         "X": "RIGHT",              # indicate right
+        "WHEEL_UP": "", "WHEEL_DOWN": "",  # no phone/minimap while driving
     },
 }
 
